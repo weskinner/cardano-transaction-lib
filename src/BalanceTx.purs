@@ -757,7 +757,7 @@ calculateMinUtxos coinsPerUtxoByte = map
 -- | required by each utxo.
 calculateMinUtxo :: Coin -> TransactionOutput -> BigInt
 calculateMinUtxo coinsPerUtxoByte txOut =
-  (unwrap coinsPerUtxoByte * fromInt 8) * utxoEntrySize txOut
+  (unwrap coinsPerUtxoByte * fromInt 10) * utxoEntrySize txOut
   where
   -- https://cardano-ledger.readthedocs.io/en/latest/explanations/min-utxo-mary.html
   -- https://github.com/input-output-hk/cardano-ledger/blob/master/doc/explanations/min-utxo-alonzo.rst
