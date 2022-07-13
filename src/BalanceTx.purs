@@ -20,7 +20,7 @@ module BalanceTx
       , EvalExUnitsAndMinFeeError'
       , TxInputLockedError'
       )
-  , BalanceTxInsError(InsufficientTxInputs, BalanceTxInsCannotMinus)
+  , BalanceTxInsError(InsufficientTxInputs, BalanceTxInsCannotMinus, UtxoLookupFailedFor)
   , CannotMinusError(CannotMinus)
   , EvalExUnitsAndMinFeeError
       ( EvalMinFeeError
