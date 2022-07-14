@@ -1,6 +1,5 @@
 /* global require exports WebSocket BROWSER_RUNTIME */
 
-const ReconnectingWebSocket = require('reconnecting-websocket');
 
 var OurWebSocket;
 if (typeof BROWSER_RUNTIME == 'undefined' || !BROWSER_RUNTIME) {
@@ -9,25 +8,28 @@ if (typeof BROWSER_RUNTIME == 'undefined' || !BROWSER_RUNTIME) {
   OurWebSocket = WebSocket;
 }
 
-class NoPerMessageDeflateWebSocket extends OurWebSocket {
-  constructor (url, protocols, options) {
-    options = options || {};
-    options.perMessageDeflate = false;
-    super(url, protocols, options);
-  }
-};
+// class NoPerMessageDeflateWebSocket extends OurWebSocket {
+//   constructor (url, protocols, options) {
+//     options = options || {};
+//     options.perMessageDeflate = false;
+//     super(url, protocols, options);
+//   }
+// };
+
+var counter = 0;
 
 // _mkWebsocket :: (String -> Effect Unit) -> String -> Effect WebSocket
 exports._mkWebSocket = logger => url => () => {
   try {
     var ws;
     if (typeof BROWSER_RUNTIME != 'undefined' && BROWSER_RUNTIME) {
-      ws = new ReconnectingWebSocket.default(url);
+      ws = new WebSocket(url);
     } else {
-      ws = new ReconnectingWebSocket(url, [], {
-        WebSocket: NoPerMessageDeflateWebSocket
+      ws = new WebSocket(url, [], {
+        WebSocket: WebSocket
       });
     }
+    ws.temp_id = counter++;
     logger("Created a new WebSocket")();
     return ws;
   } catch (e) {
@@ -48,7 +50,8 @@ exports._onWsConnect = ws => fn => () =>
 exports._onWsError = ws => logger => fn => () => {
   const listener = function (event) {
     const str = event.toString();
-    logger(`WebSocket error: ${str}`)();
+    logger(`WebSocket error (websocket id ${ws.temp_id}): ${str}`)();
+    console.log(event);
     fn(str)();
   };
   ws.addEventListener('error', listener);

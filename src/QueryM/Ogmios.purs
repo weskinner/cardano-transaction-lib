@@ -44,36 +44,10 @@ module QueryM.Ogmios
 
 import Prelude
 
-import Aeson
-  ( class DecodeAeson
-  , class EncodeAeson
-  , Aeson
-  , JsonDecodeError(TypeMismatch)
-  , caseAesonArray
-  , caseAesonObject
-  , caseAesonString
-  , decodeAeson
-  , encodeAeson'
-  , getField
-  , getFieldOptional
-  , isNull
-  )
-import Cardano.Types.Transaction
-  ( Costmdls(Costmdls)
-  , ExUnitPrices
-  , ExUnits
-  , Language(PlutusV1)
-  , Nonce
-  , SubCoin
-  )
+import Aeson (class DecodeAeson, class EncodeAeson, Aeson, JsonDecodeError(TypeMismatch), caseAesonArray, caseAesonObject, caseAesonString, decodeAeson, encodeAeson', getField, getFieldOptional, isNull, stringifyAeson)
+import Cardano.Types.Transaction (Costmdls(Costmdls), ExUnitPrices, ExUnits, Language(PlutusV1), Nonce, SubCoin)
 import Cardano.Types.Transaction as T
-import Cardano.Types.Value
-  ( Coin(Coin)
-  , CurrencySymbol
-  , Value
-  , mkCurrencySymbol
-  , mkValue
-  )
+import Cardano.Types.Value (Coin(Coin), CurrencySymbol, Value, mkCurrencySymbol, mkValue)
 import Control.Alt ((<|>))
 import Data.Array (index, singleton)
 import Data.BigInt (BigInt)
@@ -93,14 +67,11 @@ import Data.Tuple (uncurry)
 import Data.Tuple.Nested ((/\), type (/\))
 import Data.UInt (UInt)
 import Data.UInt as UInt
+import Debug (traceM)
 import Foreign.Object (Object)
 import Foreign.Object (toUnfoldable) as ForeignObject
 import Helpers (showWithParens)
-import QueryM.JsonWsp
-  ( JsonWspCall
-  , JsonWspRequest
-  , mkCallType
-  )
+import QueryM.JsonWsp (JsonWspCall, JsonWspRequest, mkCallType)
 import Serialization.Address (Slot)
 import Type.Proxy (Proxy(Proxy))
 import Types.BigNum (fromBigInt) as BigNum
@@ -458,36 +429,42 @@ instance Show TxEvaluationR where
   show = genericShow
 
 instance DecodeAeson TxEvaluationR where
-  decodeAeson = aesonObject $ \obj -> do
-    rdmrPtrExUnitsList :: Array (String /\ Aeson) <-
-      ForeignObject.toUnfoldable <$> getField obj "EvaluationResult"
-    TxEvaluationR <<< Map.fromFoldable <$>
-      traverse decodeRdmrPtrExUnitsItem rdmrPtrExUnitsList
-    where
-    decodeRdmrPtrExUnitsItem
-      :: String /\ Aeson
-      -> Either JsonDecodeError (RedeemerPointer /\ ExecutionUnits)
-    decodeRdmrPtrExUnitsItem (redeemerPtrRaw /\ exUnitsAeson) = do
-      redeemerPtr <- note redeemerPtrTypeMismatch $
-        decodeRedeemerPointer redeemerPtrRaw
-      flip aesonObject exUnitsAeson $ \exUnitsObj -> do
-        memory <- getField exUnitsObj "memory"
-        steps <- getField exUnitsObj "steps"
-        pure $ redeemerPtr /\ { memory, steps }
+  decodeAeson fullObj = do
+    traceM "------------------------"
+    traceM fullObj
+    traceM "------------------------"
+    traceM (stringifyAeson fullObj)
+    traceM "------------------------"
+    flip aesonObject fullObj $ \obj -> do
+      rdmrPtrExUnitsList :: Array (String /\ Aeson) <-
+        ForeignObject.toUnfoldable <$> getField obj "EvaluationResult"
+      TxEvaluationR <<< Map.fromFoldable <$>
+        traverse decodeRdmrPtrExUnitsItem rdmrPtrExUnitsList
+      where
+      decodeRdmrPtrExUnitsItem
+        :: String /\ Aeson
+        -> Either JsonDecodeError (RedeemerPointer /\ ExecutionUnits)
+      decodeRdmrPtrExUnitsItem (redeemerPtrRaw /\ exUnitsAeson) = do
+        redeemerPtr <- note redeemerPtrTypeMismatch $
+          decodeRedeemerPointer redeemerPtrRaw
+        flip aesonObject exUnitsAeson $ \exUnitsObj -> do
+          memory <- getField exUnitsObj "memory"
+          steps <- getField exUnitsObj "steps"
+          pure $ redeemerPtr /\ { memory, steps }
 
-    redeemerPtrTypeMismatch :: JsonDecodeError
-    redeemerPtrTypeMismatch = TypeMismatch
-      "Expected redeemer pointer to be encoded as: \
-      \^(spend|mint|certificate|withdrawal):[0-9]+$"
+      redeemerPtrTypeMismatch :: JsonDecodeError
+      redeemerPtrTypeMismatch = TypeMismatch
+        "Expected redeemer pointer to be encoded as: \
+        \^(spend|mint|certificate|withdrawal):[0-9]+$"
 
-    decodeRedeemerPointer :: String -> Maybe RedeemerPointer
-    decodeRedeemerPointer redeemerPtrRaw =
-      case split (Pattern ":") redeemerPtrRaw of
-        [ tagRaw, indexRaw ] ->
-          { redeemerTag: _, redeemerIndex: _ }
-            <$> RedeemerTag.fromString tagRaw
-            <*> Natural.fromString indexRaw
-        _ -> Nothing
+      decodeRedeemerPointer :: String -> Maybe RedeemerPointer
+      decodeRedeemerPointer redeemerPtrRaw =
+        case split (Pattern ":") redeemerPtrRaw of
+          [ tagRaw, indexRaw ] ->
+            { redeemerTag: _, redeemerIndex: _ }
+              <$> RedeemerTag.fromString tagRaw
+              <*> Natural.fromString indexRaw
+          _ -> Nothing
 
 ---------------- PROTOCOL PARAMETERS QUERY RESPONSE & PARSING
 
