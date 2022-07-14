@@ -48,7 +48,7 @@
     };
     cardano-ledger = {
       url =
-        "github:input-output-hk/cardano-ledger/1a9ec4ae9e0b09d54e49b2a40c4ead37edadcce5";
+        "github:input-output-hk/cardano-ledger/59504c5554d63a70b8518bd820aa1937acca3168";
       flake = false;
     };
     cardano-node = {

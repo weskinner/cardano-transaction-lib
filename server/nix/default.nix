@@ -108,15 +108,17 @@ pkgs.haskell-nix.cabalProject {
         "eras/shelley/test-suite"
         "eras/shelley-ma/impl"
         "eras/shelley-ma/test-suite"
+        "eras/babbage/impl"
+        "eras/babbage/test-suite"
         "libs/cardano-ledger-core"
         "libs/cardano-ledger-pretty"
         "libs/cardano-protocol-tpraos"
         "libs/cardano-data"
-        "libs/compact-map"
+        "libs/vector-map"
         "libs/set-algebra"
         "libs/small-steps"
-        "libs/small-steps-test"
         "libs/non-integral"
+        "libs/small-steps-test"
       ];
     }
     {
